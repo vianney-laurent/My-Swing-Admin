@@ -7,13 +7,15 @@ import type {
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { Session } from '@supabase/supabase-js';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const adminEmailEnv = process.env.ADMIN_EMAIL;
 
-if (!ADMIN_EMAIL) {
+if (!adminEmailEnv) {
   throw new Error(
     'La variable d’environnement ADMIN_EMAIL est requise pour sécuriser l’accès administrateur.'
   );
 }
+
+const ADMIN_EMAIL = adminEmailEnv.toLowerCase();
 
 type RedirectResult = GetServerSidePropsResult<never>;
 
@@ -34,7 +36,8 @@ export async function requireAdminSession(
     };
   }
 
-  if (session.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+  const userEmail = session.user.email.toLowerCase();
+  if (userEmail !== ADMIN_EMAIL) {
     return {
       redirect: {
         destination: '/login',
@@ -66,7 +69,8 @@ export async function assertApiAdmin(
     throw new Error('Unauthenticated request');
   }
 
-  if (session.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+  const userEmail = session.user.email.toLowerCase();
+  if (userEmail !== ADMIN_EMAIL) {
     res.status(403).json({ error: 'Accès refusé.' });
     throw new Error('Forbidden request');
   }
