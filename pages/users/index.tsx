@@ -357,168 +357,175 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
               </p>
             </div>
           ) : (
-            <div
-              className="ms-table-wrapper ms-users-table-wrapper"
-              role="region"
-              aria-live="polite"
-            >
-              <table className="ms-table">
-                <thead>
-                  <tr>
-                    <th>Utilisateur</th>
-                    <th>Email</th>
-                    <th>Statut</th>
-                    <th>Mise à jour</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profiles.map((profile) => {
-                    const isSelected = profile.id === selectedId;
-                    const displayName =
-                      typeof profile.full_name === 'string' && profile.full_name.length > 0
-                        ? profile.full_name
-                        : 'Nom non renseigné';
+            <>
+              <div
+                className="ms-table-wrapper ms-users-table-wrapper"
+                role="region"
+                aria-live="polite"
+              >
+                <table className="ms-table">
+                  <thead>
+                    <tr>
+                      <th>Utilisateur</th>
+                      <th>Email</th>
+                      <th>Statut</th>
+                      <th>Mise à jour</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {profiles.map((profile) => {
+                      const isSelected = profile.id === selectedId;
+                      const displayName =
+                        typeof profile.full_name === 'string' && profile.full_name.length > 0
+                          ? profile.full_name
+                          : 'Nom non renseigné';
 
-                    return (
-                      <tr
-                        key={profile.id}
-                        className={classNames(
-                          'ms-users-table-row',
-                          isSelected ? 'is-selected' : undefined
-                        )}
-                        aria-selected={isSelected}
-                        onClick={() => handleSelectProfile(profile.id)}
-                      >
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                            <span style={{ fontWeight: 600 }}>{displayName}</span>
-                            <span className="ms-meta">{profile.id}</span>
-                          </div>
-                        </td>
-                        <td>{getProfileEmail(profile)}</td>
-                        <td>{getProfileStatus(profile)}</td>
-                        <td>{formatDate(profile.updated_at ?? profile.created_at)}</td>
-                        <td>
-                          <div className="ms-actions">
-                            <Button
-                              size="sm"
-                              variant={isSelected ? 'primary' : 'secondary'}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleSelectProfile(profile.id);
-                              }}
+                      return (
+                        <tr
+                          key={profile.id}
+                          className={classNames(
+                            'ms-users-table-row',
+                            isSelected ? 'is-selected' : undefined
+                          )}
+                          aria-selected={isSelected}
+                          onClick={() => handleSelectProfile(profile.id)}
+                        >
+                          <td>
+                            <div
+                              style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}
                             >
-                              {isSelected ? 'Sélectionné' : 'Sélectionner'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              disabled={resettingId === profile.id}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleResetPassword(profile);
-                              }}
-                            >
-                              {resettingId === profile.id
-                                ? 'Réinitialisation...'
-                                : 'Reset mot de passe'}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="ms-users-mobile-list" aria-live="polite">
-              {profiles.map((profile) => {
-                const isSelected = profile.id === selectedId;
-                const displayName =
-                  typeof profile.full_name === 'string' && profile.full_name.length > 0
-                    ? profile.full_name
-                    : 'Nom non renseigné';
+                              <span style={{ fontWeight: 600 }}>{displayName}</span>
+                              <span className="ms-meta">{profile.id}</span>
+                            </div>
+                          </td>
+                          <td>{getProfileEmail(profile)}</td>
+                          <td>{getProfileStatus(profile)}</td>
+                          <td>{formatDate(profile.updated_at ?? profile.created_at)}</td>
+                          <td>
+                            <div className="ms-actions">
+                              <Button
+                                size="sm"
+                                variant={isSelected ? 'primary' : 'secondary'}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleSelectProfile(profile.id);
+                                }}
+                              >
+                                {isSelected ? 'Sélectionné' : 'Sélectionner'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                disabled={resettingId === profile.id}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleResetPassword(profile);
+                                }}
+                              >
+                                {resettingId === profile.id
+                                  ? 'Réinitialisation...'
+                                  : 'Reset mot de passe'}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="ms-users-mobile-list" aria-live="polite">
+                {profiles.map((profile) => {
+                  const isSelected = profile.id === selectedId;
+                  const displayName =
+                    typeof profile.full_name === 'string' && profile.full_name.length > 0
+                      ? profile.full_name
+                      : 'Nom non renseigné';
 
-                return (
-                  <div
-                    key={`${profile.id}-mobile`}
-                    className={classNames(
-                      'ms-mobile-card',
-                      isSelected ? 'ms-mobile-card--selected' : undefined
-                    )}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleSelectProfile(profile.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        handleSelectProfile(profile.id);
-                      }
-                    }}
-                    aria-pressed={isSelected}
-                  >
-                    <div className="ms-mobile-card__row">
-                      <div>
-                        <div className="ms-mobile-card__value" style={{ marginBottom: '0.35rem' }}>
-                          {displayName}
-                        </div>
-                        <div className="ms-meta">{profile.id}</div>
-                      </div>
-                      <span className="ms-badge ms-badge--neutral">
-                        {isSelected ? 'Sélectionné' : 'Utilisateur'}
-                      </span>
-                    </div>
-
-                    <div className="ms-mobile-card__row">
-                      <div>
-                        <div className="ms-mobile-card__label">Email</div>
-                        <div className="ms-mobile-card__value">{getProfileEmail(profile)}</div>
-                      </div>
-                    </div>
-
-                    <div className="ms-mobile-card__row">
-                      <div>
-                        <div className="ms-mobile-card__label">Statut</div>
-                        <div className="ms-mobile-card__value">{getProfileStatus(profile)}</div>
-                      </div>
-                      <div>
-                        <div className="ms-mobile-card__label">Mis à jour</div>
-                        <div className="ms-mobile-card__value">
-                          {formatDate(profile.updated_at ?? profile.created_at)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="ms-mobile-card__actions">
-                      <Button
-                        size="sm"
-                        variant={isSelected ? 'primary' : 'secondary'}
-                        onClick={(event) => {
-                          event.stopPropagation();
+                  return (
+                    <div
+                      key={`${profile.id}-mobile`}
+                      className={classNames(
+                        'ms-mobile-card',
+                        isSelected ? 'ms-mobile-card--selected' : undefined
+                      )}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleSelectProfile(profile.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
                           handleSelectProfile(profile.id);
-                        }}
-                      >
-                        {isSelected ? 'Sélectionné' : 'Sélectionner'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        disabled={resettingId === profile.id}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleResetPassword(profile);
-                        }}
-                      >
-                        {resettingId === profile.id
-                          ? 'Réinitialisation...'
-                          : 'Reset mot de passe'}
-                      </Button>
+                        }
+                      }}
+                      aria-pressed={isSelected}
+                    >
+                      <div className="ms-mobile-card__row">
+                        <div>
+                          <div
+                            className="ms-mobile-card__value"
+                            style={{ marginBottom: '0.35rem' }}
+                          >
+                            {displayName}
+                          </div>
+                          <div className="ms-meta">{profile.id}</div>
+                        </div>
+                        <span className="ms-badge ms-badge--neutral">
+                          {isSelected ? 'Sélectionné' : 'Utilisateur'}
+                        </span>
+                      </div>
+
+                      <div className="ms-mobile-card__row">
+                        <div>
+                          <div className="ms-mobile-card__label">Email</div>
+                          <div className="ms-mobile-card__value">{getProfileEmail(profile)}</div>
+                        </div>
+                      </div>
+
+                      <div className="ms-mobile-card__row">
+                        <div>
+                          <div className="ms-mobile-card__label">Statut</div>
+                          <div className="ms-mobile-card__value">{getProfileStatus(profile)}</div>
+                        </div>
+                        <div>
+                          <div className="ms-mobile-card__label">Mis à jour</div>
+                          <div className="ms-mobile-card__value">
+                            {formatDate(profile.updated_at ?? profile.created_at)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="ms-mobile-card__actions">
+                        <Button
+                          size="sm"
+                          variant={isSelected ? 'primary' : 'secondary'}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleSelectProfile(profile.id);
+                          }}
+                        >
+                          {isSelected ? 'Sélectionné' : 'Sélectionner'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          disabled={resettingId === profile.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleResetPassword(profile);
+                          }}
+                        >
+                          {resettingId === profile.id
+                            ? 'Réinitialisation...'
+                            : 'Reset mot de passe'}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
