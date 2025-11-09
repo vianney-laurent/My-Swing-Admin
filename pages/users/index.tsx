@@ -7,6 +7,7 @@ import { requireAdminSession } from '../../lib/auth';
 import { supabaseAdmin } from '../../lib/supabase-admin';
 import { AppShell } from '../../components/layout/AppShell';
 import { Button } from '../../components/ui/Button';
+import { classNames } from '../../lib/classNames';
 
 type UserProfile = Record<string, any> & { id: string };
 
@@ -129,9 +130,7 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
   const router = useRouter();
   const supabase = useSupabaseClient();
   const [profiles, setProfiles] = useState<UserProfile[]>(initialProfiles);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialProfiles.length > 0 ? initialProfiles[0].id : null
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string | boolean>>({});
   const [feedback, setFeedback] = useState<Feedback | null>(
     initialError ? { type: 'error', message: initialError } : null
@@ -156,6 +155,12 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
     }
     setFormValues(buildFormValues(selectedProfile, editableFields));
   }, [selectedProfile, editableFields]);
+
+  useEffect(() => {
+    if (selectedId && !profiles.some((profile) => profile.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [profiles, selectedId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -352,7 +357,11 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
               </p>
             </div>
           ) : (
-            <div className="ms-table-wrapper" role="region" aria-live="polite">
+            <div
+              className="ms-table-wrapper ms-users-table-wrapper"
+              role="region"
+              aria-live="polite"
+            >
               <table className="ms-table">
                 <thead>
                   <tr>
@@ -374,11 +383,12 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                     return (
                       <tr
                         key={profile.id}
-                        style={{
-                          backgroundColor: isSelected
-                            ? 'rgba(37, 99, 235, 0.08)'
-                            : undefined,
-                        }}
+                        className={classNames(
+                          'ms-users-table-row',
+                          isSelected ? 'is-selected' : undefined
+                        )}
+                        aria-selected={isSelected}
+                        onClick={() => handleSelectProfile(profile.id)}
                       >
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
@@ -394,15 +404,21 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                             <Button
                               size="sm"
                               variant={isSelected ? 'primary' : 'secondary'}
-                              onClick={() => handleSelectProfile(profile.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleSelectProfile(profile.id);
+                              }}
                             >
-                              {isSelected ? 'Sélectionné' : 'Modifier'}
+                              {isSelected ? 'Sélectionné' : 'Sélectionner'}
                             </Button>
                             <Button
                               size="sm"
                               variant="danger"
                               disabled={resettingId === profile.id}
-                              onClick={() => handleResetPassword(profile)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleResetPassword(profile);
+                              }}
                             >
                               {resettingId === profile.id
                                 ? 'Réinitialisation...'
@@ -415,6 +431,93 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                   })}
                 </tbody>
               </table>
+            </div>
+            <div className="ms-users-mobile-list" aria-live="polite">
+              {profiles.map((profile) => {
+                const isSelected = profile.id === selectedId;
+                const displayName =
+                  typeof profile.full_name === 'string' && profile.full_name.length > 0
+                    ? profile.full_name
+                    : 'Nom non renseigné';
+
+                return (
+                  <div
+                    key={`${profile.id}-mobile`}
+                    className={classNames(
+                      'ms-mobile-card',
+                      isSelected ? 'ms-mobile-card--selected' : undefined
+                    )}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleSelectProfile(profile.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleSelectProfile(profile.id);
+                      }
+                    }}
+                    aria-pressed={isSelected}
+                  >
+                    <div className="ms-mobile-card__row">
+                      <div>
+                        <div className="ms-mobile-card__value" style={{ marginBottom: '0.35rem' }}>
+                          {displayName}
+                        </div>
+                        <div className="ms-meta">{profile.id}</div>
+                      </div>
+                      <span className="ms-badge ms-badge--neutral">
+                        {isSelected ? 'Sélectionné' : 'Utilisateur'}
+                      </span>
+                    </div>
+
+                    <div className="ms-mobile-card__row">
+                      <div>
+                        <div className="ms-mobile-card__label">Email</div>
+                        <div className="ms-mobile-card__value">{getProfileEmail(profile)}</div>
+                      </div>
+                    </div>
+
+                    <div className="ms-mobile-card__row">
+                      <div>
+                        <div className="ms-mobile-card__label">Statut</div>
+                        <div className="ms-mobile-card__value">{getProfileStatus(profile)}</div>
+                      </div>
+                      <div>
+                        <div className="ms-mobile-card__label">Mis à jour</div>
+                        <div className="ms-mobile-card__value">
+                          {formatDate(profile.updated_at ?? profile.created_at)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="ms-mobile-card__actions">
+                      <Button
+                        size="sm"
+                        variant={isSelected ? 'primary' : 'secondary'}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSelectProfile(profile.id);
+                        }}
+                      >
+                        {isSelected ? 'Sélectionné' : 'Sélectionner'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        disabled={resettingId === profile.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleResetPassword(profile);
+                        }}
+                      >
+                        {resettingId === profile.id
+                          ? 'Réinitialisation...'
+                          : 'Reset mot de passe'}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
