@@ -460,6 +460,45 @@ textarea {
   background-color: rgba(148, 163, 184, 0.12);
 }
 
+.ms-users-table-wrapper {
+  display: block;
+}
+
+.ms-users-table-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ms-users-table-row.is-selected {
+  background-color: rgba(37, 99, 235, 0.12);
+}
+
+.ms-users-mobile-list {
+  display: none;
+}
+
+.ms-mobile-card--selected {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.ms-mobile-card--selected .ms-badge {
+  background-color: rgba(37, 99, 235, 0.18);
+  color: var(--ms-color-primary);
+}
+
+@media (max-width: 767px) {
+  .ms-users-table-wrapper {
+    display: none;
+  }
+
+  .ms-users-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-3);
+  }
+}
+
 .ms-mobile-list {
   display: flex;
   flex-direction: column;
@@ -739,6 +778,12 @@ textarea {
   background-color: rgba(239, 68, 68, 0.15);
   color: var(--ms-color-danger);
   border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.ms-alert--success {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--ms-color-success);
+  border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 @media (min-width: 640px) {
