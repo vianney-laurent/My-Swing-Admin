@@ -966,6 +966,127 @@ textarea {
   font-weight: 700;
 }
 
+.ms-trend {
+  font-size: var(--ms-font-sm);
+  font-weight: 600;
+}
+
+.ms-trend--positive {
+  color: var(--ms-color-success);
+}
+
+.ms-trend--negative {
+  color: var(--ms-color-danger);
+}
+
+.ms-trend--neutral {
+  color: var(--ms-color-text-muted);
+}
+
+.ms-consent-grid {
+  display: grid;
+  gap: var(--ms-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.ms-consent-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ms-space-3);
+  padding: var(--ms-space-4);
+  border-radius: var(--ms-radius-lg);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background-color: var(--ms-color-surface-subtle);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.ms-consent-item--marketing {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(99, 102, 241, 0.08));
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+.ms-consent-item--improvement {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(14, 165, 233, 0.08));
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.ms-consent-item__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ms-space-3);
+}
+
+.ms-consent-item__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ms-consent-item__label {
+  font-size: var(--ms-font-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ms-consent-item__description {
+  font-size: var(--ms-font-xs);
+  color: var(--ms-color-text-muted);
+  max-width: 26ch;
+}
+
+.ms-consent-item__rate {
+  font-size: var(--ms-font-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ms-consent-item--marketing .ms-consent-item__rate {
+  color: var(--ms-color-primary);
+}
+
+.ms-consent-item--improvement .ms-consent-item__rate {
+  color: var(--ms-color-success);
+}
+
+.ms-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ms-space-2);
+}
+
+.ms-progress__track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background-color: rgba(148, 163, 184, 0.22);
+  overflow: hidden;
+}
+
+.ms-progress__bar {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.ms-consent-item--marketing .ms-progress__bar {
+  background: linear-gradient(135deg, var(--ms-color-primary), var(--ms-color-secondary));
+}
+
+.ms-consent-item--improvement .ms-progress__bar {
+  background: linear-gradient(135deg, var(--ms-color-success), #0ea5e9);
+}
+
+.ms-progress__value {
+  font-size: var(--ms-font-xs);
+  color: var(--ms-color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .ms-footer-note {
   font-size: var(--ms-font-xs);
   color: var(--ms-color-text-muted);
