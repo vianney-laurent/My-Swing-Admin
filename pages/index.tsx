@@ -21,11 +21,22 @@ type MetricData = {
   deltaPercentage: number | null;
 };
 
+type RateMetricData = {
+  optedIn: number;
+  total: number;
+  rate: number;
+};
+
 type DashboardMetrics = {
   generatedAt: string;
   totalUsers: MetricData;
   weeklySignups: MetricData;
   analyses: MetricData;
+  waitlist: MetricData;
+  consent: {
+    marketing: RateMetricData;
+    improvement: RateMetricData;
+  };
 };
 
 type HomeProps = {
@@ -96,6 +107,26 @@ export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
       value: numberFormatter.format(dashboardMetrics.analyses.current),
       trend: formatTrend(dashboardMetrics.analyses, 'vs M-1'),
     },
+    {
+      label: 'Inscriptions waitlist (semaine en cours)',
+      value: numberFormatter.format(dashboardMetrics.waitlist.current),
+      trend: formatTrend(dashboardMetrics.waitlist, 'vs semaine précédente'),
+    },
+  ];
+
+  const consentCards = [
+    {
+      label: 'Opt-in marketing',
+      description: 'Communications marketing',
+      metric: dashboardMetrics.consent.marketing,
+      variant: 'marketing' as const,
+    },
+    {
+      label: 'Opt-in amélioration produit',
+      description: 'Partage pour améliorer My Swing',
+      metric: dashboardMetrics.consent.improvement,
+      variant: 'improvement' as const,
+    },
   ];
 
   return (
@@ -136,6 +167,47 @@ export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="ms-card">
+          <div className="ms-card__header">
+            <h2 className="ms-card__title">Consentements utilisateurs</h2>
+            <p className="ms-card__meta">
+              Taux d’opt-in par rapport à l’ensemble des consentements enregistrés.
+            </p>
+          </div>
+          <div className="ms-consent-grid">
+            {consentCards.map((card) => {
+              const rateValue = percentFormatter.format(card.metric.rate);
+              const clampedRate = Math.max(0, Math.min(card.metric.rate, 100));
+              return (
+                <div
+                  key={card.label}
+                  className={`ms-consent-item ms-consent-item--${card.variant}`}
+                >
+                  <div className="ms-consent-item__header">
+                    <div className="ms-consent-item__titles">
+                      <span className="ms-consent-item__label">{card.label}</span>
+                      <p className="ms-consent-item__description">{card.description}</p>
+                    </div>
+                    <span className="ms-consent-item__rate">{rateValue} %</span>
+                  </div>
+                  <div className="ms-progress">
+                    <div className="ms-progress__track">
+                      <div
+                        className="ms-progress__bar"
+                        style={{ width: `${clampedRate}%` }}
+                      />
+                    </div>
+                    <span className="ms-progress__value">
+                      {numberFormatter.format(card.metric.optedIn)} /{' '}
+                      {numberFormatter.format(card.metric.total)} utilisateurs
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -234,6 +306,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     previousWeekUsersResponse,
     currentMonthAnalysesResponse,
     previousMonthAnalysesResponse,
+    consentTotalResponse,
+    consentMarketingResponse,
+    consentImprovementResponse,
+    waitlistCurrentWeekResponse,
+    waitlistPreviousWeekResponse,
   ] = await Promise.all([
     supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
     supabaseAdmin
@@ -261,6 +338,25 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', startOfPreviousMonth.toISOString())
       .lt('created_at', startOfCurrentMonth.toISOString()),
+    supabaseAdmin.from('consent').select('*', { count: 'exact', head: true }),
+    supabaseAdmin
+      .from('consent')
+      .select('*', { count: 'exact', head: true })
+      .eq('marketing', true),
+    supabaseAdmin
+      .from('consent')
+      .select('*', { count: 'exact', head: true })
+      .eq('improvement', true),
+    supabaseAdmin
+      .from('waitlist')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startOfCurrentWeek.toISOString())
+      .lt('created_at', nowIso),
+    supabaseAdmin
+      .from('waitlist')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startOfPreviousWeek.toISOString())
+      .lt('created_at', endOfPreviousWeekComparable.toISOString()),
   ]);
 
   const getCountOrZero = (
@@ -295,6 +391,26 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     previousMonthAnalysesResponse,
     'analyses (mois précédent)'
   );
+  const consentTotalCount = getCountOrZero(
+    consentTotalResponse,
+    'consent (total)'
+  );
+  const marketingOptInCount = getCountOrZero(
+    consentMarketingResponse,
+    'consent (marketing true)'
+  );
+  const improvementOptInCount = getCountOrZero(
+    consentImprovementResponse,
+    'consent (improvement true)'
+  );
+  const waitlistCurrentWeekCount = getCountOrZero(
+    waitlistCurrentWeekResponse,
+    'waitlist (semaine en cours)'
+  );
+  const waitlistPreviousWeekCount = getCountOrZero(
+    waitlistPreviousWeekResponse,
+    'waitlist (semaine précédente comparable)'
+  );
 
   const previousMonthUsersTotal = Math.max(
     totalUsersCount - currentMonthUsersCount,
@@ -317,6 +433,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     previousMonthAnalysesCount > 0
       ? (analysesDelta / previousMonthAnalysesCount) * 100
       : null;
+  const waitlistDelta = waitlistCurrentWeekCount - waitlistPreviousWeekCount;
+  const waitlistDeltaPercent =
+    waitlistPreviousWeekCount > 0
+      ? (waitlistDelta / waitlistPreviousWeekCount) * 100
+      : null;
+
+  const marketingRate =
+    consentTotalCount > 0 ? (marketingOptInCount / consentTotalCount) * 100 : 0;
+  const improvementRate =
+    consentTotalCount > 0 ? (improvementOptInCount / consentTotalCount) * 100 : 0;
 
   const dashboardMetrics: DashboardMetrics = {
     generatedAt: nowIso,
@@ -337,6 +463,24 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       previous: previousMonthAnalysesCount,
       delta: analysesDelta,
       deltaPercentage: analysesDeltaPercent,
+    },
+    waitlist: {
+      current: waitlistCurrentWeekCount,
+      previous: waitlistPreviousWeekCount,
+      delta: waitlistDelta,
+      deltaPercentage: waitlistDeltaPercent,
+    },
+    consent: {
+      marketing: {
+        optedIn: marketingOptInCount,
+        total: consentTotalCount,
+        rate: marketingRate,
+      },
+      improvement: {
+        optedIn: improvementOptInCount,
+        total: consentTotalCount,
+        rate: improvementRate,
+      },
     },
   };
 
