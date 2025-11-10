@@ -814,6 +814,54 @@ textarea {
   color: var(--ms-color-text-muted);
 }
 
+.ms-field__hint--loading {
+  color: var(--ms-color-primary);
+  font-weight: 500;
+}
+
+.ms-image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ms-space-3);
+}
+
+.ms-image-preview {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin-top: var(--ms-space-2);
+}
+
+.ms-image-preview__img {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: var(--ms-radius-md);
+  border: 1px solid var(--ms-color-border);
+  object-fit: contain;
+  background-color: var(--ms-color-surface-subtle);
+}
+
+.ms-image-preview__remove {
+  margin-top: var(--ms-space-2);
+  padding: var(--ms-space-2) var(--ms-space-4);
+  background-color: var(--ms-color-danger);
+  color: white;
+  border: none;
+  border-radius: var(--ms-radius-md);
+  font-size: var(--ms-font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ms-image-preview__remove:hover {
+  background-color: #dc2626;
+}
+
+.ms-image-preview__remove:active {
+  background-color: #b91c1c;
+}
+
 .ms-input,
 .ms-textarea,
 .ms-select {

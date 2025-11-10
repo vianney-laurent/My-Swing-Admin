@@ -19,6 +19,10 @@ export default function EditMessage({ message }: EditMessageProps) {
   const router = useRouter();
   const supabase = useSupabaseClient();
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    message.image_url ?? null
+  );
   const [formData, setFormData] = useState<InAppMessageFormData>({
     title: message.title,
     content: message.content,
@@ -70,6 +74,87 @@ export default function EditMessage({ message }: EditMessageProps) {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Vérifier que c'est une image
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner un fichier image');
+      return;
+    }
+
+    // Vérifier la taille (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('L\'image est trop volumineuse (maximum 10MB)');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Créer une prévisualisation
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Convertir en base64 pour l'upload
+      const base64Reader = new FileReader();
+      base64Reader.onload = async (event) => {
+        try {
+          const base64 = event.target?.result as string;
+
+          const response = await fetch('/api/upload/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              file: base64,
+              fileName: file.name,
+            }),
+          });
+
+          if (response.status === 401 || response.status === 403) {
+            await handleSignOut();
+            return;
+          }
+
+          if (!response.ok) {
+            const { error } = await response.json();
+            throw new Error(error ?? 'Erreur lors de l\'upload');
+          }
+
+          const { url } = await response.json();
+          setFormData((previous) => ({
+            ...previous,
+            image_url: url,
+          }));
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          alert(error instanceof Error ? error.message : 'Erreur lors de l\'upload de l\'image');
+          setImagePreview(null);
+        } finally {
+          setUploading(false);
+        }
+      };
+      base64Reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      alert('Erreur lors du traitement de l\'image');
+      setUploading(false);
+      setImagePreview(null);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setFormData((previous) => ({
+      ...previous,
+      image_url: undefined,
+    }));
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -100,6 +185,13 @@ export default function EditMessage({ message }: EditMessageProps) {
       }
     };
     reader.readAsText(file);
+  };
+
+  const getImageDimensions = () => {
+    if (formData.type === 'banner') {
+      return '1200 x 675 pixels (ratio 16:9) ou 1920 x 1080 pixels';
+    }
+    return '1080 x 1080 pixels (carré) ou 800 x 800 pixels';
   };
 
     const updatedAt = useMemo(() => {
@@ -221,19 +313,43 @@ export default function EditMessage({ message }: EditMessageProps) {
                 </div>
 
                 <div className="ms-field">
-                  <label htmlFor="imageUrl" className="ms-field__label">
-                    URL de l&apos;image (optionnel)
+                  <label htmlFor="imageUpload" className="ms-field__label">
+                    Image (optionnel)
                   </label>
-                  <input
-                    id="imageUrl"
-                    type="url"
-                    className="ms-input"
-                    placeholder="https://..."
-                    value={formData.image_url || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, image_url: e.target.value })
-                    }
-                  />
+                  <div className="ms-image-upload">
+                    <input
+                      id="imageUpload"
+                      type="file"
+                      accept="image/*"
+                      className="ms-input"
+                      disabled={uploading}
+                      onChange={handleImageUpload}
+                    />
+                    <span className="ms-field__hint">
+                      Dimensions recommandées pour {formData.type === 'banner' ? 'bannière' : 'overlay'}: {getImageDimensions()}
+                    </span>
+                    {uploading && (
+                      <p className="ms-field__hint ms-field__hint--loading">
+                        Upload en cours...
+                      </p>
+                    )}
+                    {(imagePreview || formData.image_url) && (
+                      <div className="ms-image-preview">
+                        <img
+                          src={imagePreview || formData.image_url || ''}
+                          alt="Aperçu"
+                          className="ms-image-preview__img"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="ms-image-preview__remove"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </section>
 
