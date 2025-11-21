@@ -188,14 +188,29 @@ textarea {
 .ms-sidebar__brand-logo {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, var(--ms-color-primary), var(--ms-color-secondary));
+  background: linear-gradient(135deg, var(--ms-color-primary), var(--ms-color-primary-hover));
   border-radius: var(--ms-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: 800;
+  font-weight: 700;
   font-size: var(--ms-font-sm);
+}
+
+.ms-sidebar__close {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--ms-color-text-muted);
+  cursor: pointer;
+  padding: var(--ms-space-2);
+}
+
+@media (max-width: 768px) {
+  .ms-sidebar__close {
+    display: flex;
+  }
 }
 
 .ms-sidebar__content {
@@ -277,6 +292,30 @@ textarea {
 /* Mobile Toggle */
 .ms-mobile-toggle {
   display: none;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ms-mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 45;
+  /* Below sidebar (50) but above header (40) */
+  backdrop-filter: blur(2px);
 }
 
 @media (max-width: 1024px) {
@@ -505,19 +544,29 @@ textarea {
 
 .ms-user-menu__dropdown {
   position: absolute;
-  right: 0;
-  bottom: calc(100% + var(--ms-space-2));
-  top: auto;
-  min-width: 220px;
+  bottom: 100%;
+  left: 0;
+  width: 260px;
   background-color: var(--ms-color-surface);
   border: 1px solid var(--ms-color-border);
   border-radius: var(--ms-radius-lg);
-  box-shadow: var(--ms-shadow-md);
-  padding: var(--ms-space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ms-space-3);
-  z-index: 40;
+  box-shadow: var(--ms-shadow-lg);
+  padding: var(--ms-space-2);
+  margin-bottom: var(--ms-space-2);
+  animation: slideUp 0.2s ease-out;
+  z-index: 50;
+}
+
+@media (max-width: 768px) {
+  .ms-user-menu__dropdown {
+    left: auto;
+    right: 0;
+    /* Anchor to right on mobile */
+    bottom: 120%;
+    /* Push it up a bit more */
+    width: 240px;
+    /* Slightly smaller width */
+  }
 }
 
 .ms-user-menu__summary {

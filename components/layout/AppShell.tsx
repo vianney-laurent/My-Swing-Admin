@@ -85,6 +85,13 @@ export function AppShell({
             <div className="ms-sidebar__brand-logo">MS</div>
             <span>{brandLabel}</span>
           </Link>
+          <button
+            className="ms-sidebar__close"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Fermer le menu"
+          >
+            <CloseIcon />
+          </button>
         </div>
 
         <div className="ms-sidebar__content">
@@ -151,6 +158,17 @@ export function AppShell({
           {children}
         </div>
       </main>
-    </div>
+
+      {/* Mobile Overlay */}
+      {
+        mobileMenuOpen && (
+          <div
+            className="ms-mobile-overlay"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )
+      }
+    </div >
   );
 }
