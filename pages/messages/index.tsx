@@ -7,6 +7,7 @@ import { InAppMessage } from '../../types/in-app-messages';
 import { requireAdminSession } from '../../lib/auth';
 import { AppShell } from '../../components/layout/AppShell';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
 import { MessageList } from '../../components/messages/MessageList';
 
 type MessagesPageProps = {
@@ -110,9 +111,8 @@ export default function MessagesPage({
     return { total, active, targeted, upcoming };
   }, [messages]);
 
-  const description = `Pilotez ${stats.total} message${
-    stats.total > 1 ? 's' : ''
-  } in-app pour accompagner les différents usages My Swing.`;
+  const description = `Pilotez ${stats.total} message${stats.total > 1 ? 's' : ''
+    } in-app pour accompagner les différents usages My Swing.`;
 
   const metrics = [
     { label: 'Total', value: stats.total },
@@ -145,7 +145,7 @@ export default function MessagesPage({
           </>
         }
       >
-        <div className="ms-card ms-card--neutral">
+        <Card className="ms-card--neutral">
           <div className="ms-metric-grid">
             {metrics.map((metric) => (
               <div key={metric.label} className="ms-metric-card">
@@ -154,16 +154,16 @@ export default function MessagesPage({
               </div>
             ))}
           </div>
-          <div className="ms-footer-note">
+          <div className="ms-footer-note" style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--ms-color-text-muted)' }}>
             {lastUpdated
               ? `Dernière mise à jour : ${lastUpdated.toLocaleTimeString('fr-FR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}`
+                hour: '2-digit',
+                minute: '2-digit',
+              })}`
               : 'Synchronisation initiale en cours'}
             {loading ? ' - Actualisation en cours...' : ''}
           </div>
-        </div>
+        </Card>
 
         <MessageList
           messages={messages}
