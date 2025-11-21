@@ -3,6 +3,7 @@ import type { GetServerSideProps } from 'next';
 import { requireAdminSession } from '../lib/auth';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 
 type MessageStats = {
   total: number;
@@ -141,120 +142,115 @@ export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <AppShell
-        title="Tableau de bord My Swing"
+        title="Tableau de bord"
         description="Visualisez les indicateurs clés actualisés pour piloter My Swing."
       >
-        <div className="ms-card">
-          <div className="ms-card__header">
-            <h2 className="ms-card__title">Indicateurs clés</h2>
-            <p className="ms-card__meta">
-              Données synchronisées le{' '}
-              {metricsGeneratedAt.toLocaleString('fr-FR', {
-                day: '2-digit',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
-          </div>
-          <div className="ms-metric-grid">
-            {metricCards.map((metric) => (
-              <div key={metric.label} className="ms-metric-card">
-                <span className="ms-metric-card__label">{metric.label}</span>
-                <span className="ms-metric-card__value">{metric.value}</span>
-                <span className={`ms-trend ms-trend--${metric.trend.variant}`}>
-                  {metric.trend.text}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="ms-card">
-          <div className="ms-card__header">
-            <h2 className="ms-card__title">Consentements utilisateurs</h2>
-            <p className="ms-card__meta">
-              Taux d’opt-in par rapport à l’ensemble des consentements enregistrés.
-            </p>
-          </div>
-          <div className="ms-consent-grid">
-            {consentCards.map((card) => {
-              const rateValue = percentFormatter.format(card.metric.rate);
-              const clampedRate = Math.max(0, Math.min(card.metric.rate, 100));
-              return (
-                <div
-                  key={card.label}
-                  className={`ms-consent-item ms-consent-item--${card.variant}`}
-                >
-                  <div className="ms-consent-item__header">
-                    <div className="ms-consent-item__titles">
-                      <span className="ms-consent-item__label">{card.label}</span>
-                      <p className="ms-consent-item__description">{card.description}</p>
+        <div className="ms-dashboard-grid">
+          {/* Key Metrics Section */}
+          <section className="ms-dashboard-section">
+            <h2 className="ms-section-title">Performance</h2>
+            <div className="ms-metric-grid">
+              {metricCards.map((metric) => (
+                <Card key={metric.label} className="ms-metric-card-wrapper">
+                  <div className="ms-metric-card">
+                    <span className="ms-metric-card__label">{metric.label}</span>
+                    <div className="ms-metric-card__content">
+                      <span className="ms-metric-card__value">{metric.value}</span>
+                      <span className={`ms-trend ms-trend--${metric.trend.variant}`}>
+                        {metric.trend.text}
+                      </span>
                     </div>
-                    <span className="ms-consent-item__rate">{rateValue} %</span>
                   </div>
-                  <div className="ms-progress">
-                    <div className="ms-progress__track">
-                      <div
-                        className="ms-progress__bar"
-                        style={{ width: `${clampedRate}%` }}
-                      />
-                    </div>
-                    <span className="ms-progress__value">
-                      {numberFormatter.format(card.metric.optedIn)} /{' '}
-                      {numberFormatter.format(card.metric.total)} utilisateurs
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="ms-card ms-card--neutral">
-          <div className="ms-card__header">
-            <h2 className="ms-card__title">Messages in-app</h2>
-            <p className="ms-card__meta">
-              Données rafraîchies le{' '}
-              {generatedAt.toLocaleString('fr-FR', {
-                day: '2-digit',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
-          </div>
-          <div className="ms-metric-grid">
-            {messageMetrics.map((metric) => (
-              <div key={metric.label} className="ms-metric-card">
-                <span className="ms-metric-card__label">{metric.label}</span>
-                <span className="ms-metric-card__value">{metric.value}</span>
-              </div>
-            ))}
-          </div>
-          <div className="ms-actions">
-            <Button variant="secondary" href="/messages">
-              Gérer les messages
-            </Button>
-            <Button href="/messages/new">Créer un message</Button>
-          </div>
-        </div>
-
-        <div className="ms-section">
-          <h2 className="ms-section__title">Accès rapides</h2>
-          <p className="ms-section__description">
-            Naviguez dès maintenant vers les futures sections dédiées.
-          </p>
-          <div className="ms-card">
-            <div className="ms-actions">
-              <Button href="/users" variant="secondary">
-                Gestion utilisateurs
-              </Button>
-              <Button href="/messages" variant="secondary">
-                Messages in-app
-              </Button>
+                </Card>
+              ))}
             </div>
+          </section>
+
+          <div className="ms-dashboard-split">
+            {/* Consent Section */}
+            <section className="ms-dashboard-section">
+              <h2 className="ms-section-title">Consentements</h2>
+              <Card>
+                <div className="ms-consent-grid">
+                  {consentCards.map((card) => {
+                    const rateValue = percentFormatter.format(card.metric.rate);
+                    const clampedRate = Math.max(0, Math.min(card.metric.rate, 100));
+                    return (
+                      <div
+                        key={card.label}
+                        className={`ms-consent-item ms-consent-item--${card.variant}`}
+                      >
+                        <div className="ms-consent-item__header">
+                          <div className="ms-consent-item__titles">
+                            <span className="ms-consent-item__label">{card.label}</span>
+                            <p className="ms-consent-item__description">{card.description}</p>
+                          </div>
+                          <span className="ms-consent-item__rate">{rateValue} %</span>
+                        </div>
+                        <div className="ms-progress">
+                          <div className="ms-progress__track">
+                            <div
+                              className="ms-progress__bar"
+                              style={{ width: `${clampedRate}%` }}
+                            />
+                          </div>
+                          <span className="ms-progress__value">
+                            {numberFormatter.format(card.metric.optedIn)} /{' '}
+                            {numberFormatter.format(card.metric.total)} utilisateurs
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </section>
+
+            {/* In-App Messages Section */}
+            <section className="ms-dashboard-section">
+              <h2 className="ms-section-title">Messages In-App</h2>
+              <Card
+                actions={
+                  <Button variant="secondary" size="sm" href="/messages">
+                    Gérer
+                  </Button>
+                }
+              >
+                <div className="ms-message-stats">
+                  {messageMetrics.map((metric) => (
+                    <div key={metric.label} className="ms-stat-row">
+                      <span className="ms-stat-row__label">{metric.label}</span>
+                      <span className="ms-stat-row__value">{metric.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="ms-card-footer-action">
+                  <Button href="/messages/new" fullWidth>Créer un message</Button>
+                </div>
+              </Card>
+            </section>
           </div>
+
+          {/* Quick Access */}
+          <section className="ms-dashboard-section">
+            <h2 className="ms-section-title">Accès Rapides</h2>
+            <div className="ms-quick-access-grid">
+              <Card className="ms-quick-access-card">
+                <div className="ms-quick-access-content">
+                  <h3>Utilisateurs</h3>
+                  <p>Gérer les profils et les coachs</p>
+                  <Button href="/users" variant="secondary">Accéder</Button>
+                </div>
+              </Card>
+              <Card className="ms-quick-access-card">
+                <div className="ms-quick-access-content">
+                  <h3>Messages</h3>
+                  <p>Campagnes et notifications</p>
+                  <Button href="/messages" variant="secondary">Accéder</Button>
+                </div>
+              </Card>
+            </div>
+          </section>
         </div>
       </AppShell>
     </>

@@ -5,6 +5,7 @@ import { requireAdminSession } from '../../lib/auth';
 import { supabaseAdmin } from '../../lib/supabase-admin';
 import { AppShell } from '../../components/layout/AppShell';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
 
 type UserProfile = Record<string, any> & { id: string };
 
@@ -351,8 +352,8 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
       profileName !== 'Nom non renseigné'
         ? profileName
         : fallbackEmail !== '—'
-        ? fallbackEmail
-        : profile.id;
+          ? fallbackEmail
+          : profile.id;
 
     if (typeof window !== 'undefined') {
       const confirmed = window.confirm(
@@ -415,28 +416,21 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
         breadcrumbs={[
           { label: 'Accueil', href: '/' },
           { label: 'Gestion utilisateurs' },
-          ]}
+        ]}
       >
         {feedback ? (
           <div
-            className={`ms-alert ${
-              feedback.type === 'error' ? 'ms-alert--error' : 'ms-alert--success'
-            }`}
+            className={`ms-alert ${feedback.type === 'error' ? 'ms-alert--error' : 'ms-alert--success'
+              }`}
           >
             {feedback.message}
           </div>
         ) : null}
 
-        <div className="ms-card">
-            <div className="ms-card__header">
-              <h2 className="ms-card__title">Profils Supabase</h2>
-              <p className="ms-card__meta">
-                Liste des comptes présents dans la table <code>profiles</code>. Utilisez le bouton
-                « Modifier » pour ouvrir une modale d’édition rapide ou réinitialisez un mot de passe
-                en un clic.
-              </p>
-            </div>
-
+        <Card
+          title="Profils Supabase"
+          description="Liste des comptes présents dans la table profiles. Utilisez le bouton « Modifier » pour ouvrir une modale d’édition rapide ou réinitialisez un mot de passe en un clic."
+        >
           {profiles.length === 0 ? (
             <div className="ms-empty-state">
               <p>Aucun utilisateur enregistré pour le moment.</p>
@@ -461,56 +455,57 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                       <th>Actions</th>
                     </tr>
                   </thead>
-                    <tbody>
-                      {profiles.map((profile) => {
-                        const displayName = getProfileName(profile);
+                  <tbody>
+                    {profiles.map((profile) => {
+                      const displayName = getProfileName(profile);
 
-                        return (
-                          <tr key={profile.id} className="ms-users-table-row">
-                            <td>
-                              <div
-                                style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}
+                      return (
+                        <tr key={profile.id} className="ms-users-table-row">
+                          <td>
+                            <div
+                              style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}
+                            >
+                              <span style={{ fontWeight: 600 }}>{displayName}</span>
+                              <span className="ms-meta">{profile.id}</span>
+                            </div>
+                          </td>
+                          <td>{getProfileEmail(profile)}</td>
+                          <td>{getProfileStatus(profile)}</td>
+                          <td>{formatDate(profile.updated_at ?? profile.created_at)}</td>
+                          <td>
+                            <div className="ms-actions">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleOpenEdit(profile)}
                               >
-                                <span style={{ fontWeight: 600 }}>{displayName}</span>
-                                <span className="ms-meta">{profile.id}</span>
-                              </div>
-                            </td>
-                            <td>{getProfileEmail(profile)}</td>
-                            <td>{getProfileStatus(profile)}</td>
-                            <td>{formatDate(profile.updated_at ?? profile.created_at)}</td>
-                            <td>
-                              <div className="ms-actions">
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => handleOpenEdit(profile)}
-                                >
-                                  Modifier
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  disabled={resettingId === profile.id}
-                                  onClick={() => handleResetPassword(profile)}
-                                >
-                                  {resettingId === profile.id
-                                    ? 'Réinitialisation...'
-                                    : 'Reset mot de passe'}
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
+                                Modifier
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                disabled={resettingId === profile.id}
+                                onClick={() => handleResetPassword(profile)}
+                              >
+                                {resettingId === profile.id
+                                  ? 'Réinitialisation...'
+                                  : 'Reset mot de passe'}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
                 </table>
               </div>
               <div className="ms-users-mobile-list" aria-live="polite">
-                  {profiles.map((profile) => {
-                    const displayName = getProfileName(profile);
+                {profiles.map((profile) => {
+                  const displayName = getProfileName(profile);
 
-                    return (
-                      <div key={`${profile.id}-mobile`} className="ms-mobile-card">
+                  return (
+                    <Card key={`${profile.id}-mobile`} className="ms-mobile-card-wrapper">
+                      <div className="ms-mobile-card">
                         <div className="ms-mobile-card__row">
                           <div>
                             <div
@@ -560,136 +555,137 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                           </Button>
                         </div>
                       </div>
-                    );
-                  })}
+                    </Card>
+                  );
+                })}
               </div>
             </>
           )}
-        </div>
-          {editingProfile ? (
+        </Card>
+        {editingProfile ? (
+          <div
+            className="ms-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-user-modal-title"
+          >
             <div
-              className="ms-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="edit-user-modal-title"
-            >
-              <div
-                className="ms-modal__backdrop"
-                onClick={closeModal}
-                aria-hidden="true"
-              />
-              <div className="ms-modal__dialog">
-                <div className="ms-modal__header">
-                  <div>
-                    <h2 className="ms-modal__title" id="edit-user-modal-title">
-                      Modifier {editingDisplayName}
-                    </h2>
-                    <p className="ms-modal__subtitle">{editingSummary}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="ms-modal__close"
-                    onClick={closeModal}
-                    aria-label="Fermer la modale d’édition"
-                  >
-                    <span aria-hidden="true">&times;</span>
-                  </button>
+              className="ms-modal__backdrop"
+              onClick={closeModal}
+              aria-hidden="true"
+            />
+            <div className="ms-modal__dialog">
+              <div className="ms-modal__header">
+                <div>
+                  <h2 className="ms-modal__title" id="edit-user-modal-title">
+                    Modifier {editingDisplayName}
+                  </h2>
+                  <p className="ms-modal__subtitle">{editingSummary}</p>
                 </div>
+                <button
+                  type="button"
+                  className="ms-modal__close"
+                  onClick={closeModal}
+                  aria-label="Fermer la modale d’édition"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
 
-                {editableFields.length === 0 ? (
-                  <div className="ms-empty-state">
-                    <p>Aucun champ modifiable détecté pour ce profil.</p>
-                    <p>Vous pouvez néanmoins réinitialiser son mot de passe.</p>
-                    <div
-                      className="ms-actions"
-                      style={{ justifyContent: 'flex-end', marginTop: '1rem' }}
+              {editableFields.length === 0 ? (
+                <div className="ms-empty-state">
+                  <p>Aucun champ modifiable détecté pour ce profil.</p>
+                  <p>Vous pouvez néanmoins réinitialiser son mot de passe.</p>
+                  <div
+                    className="ms-actions"
+                    style={{ justifyContent: 'flex-end', marginTop: '1rem' }}
+                  >
+                    <Button
+                      type="button"
+                      variant="danger"
+                      disabled={resettingId === editingProfile.id}
+                      onClick={() => handleResetPassword(editingProfile)}
                     >
-                      <Button
-                        type="button"
-                        variant="danger"
-                        disabled={resettingId === editingProfile.id}
-                        onClick={() => handleResetPassword(editingProfile)}
-                      >
-                        {resettingId === editingProfile.id
-                          ? 'Réinitialisation...'
-                          : 'Reset mot de passe'}
-                      </Button>
-                      <Button type="button" variant="ghost" onClick={closeModal}>
-                        Fermer
-                      </Button>
-                    </div>
+                      {resettingId === editingProfile.id
+                        ? 'Réinitialisation...'
+                        : 'Reset mot de passe'}
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={closeModal}>
+                      Fermer
+                    </Button>
                   </div>
-                ) : (
-                  <form className="ms-form" onSubmit={handleSubmit}>
-                    <div className="ms-form__grid ms-form__grid--two">
-                      {editableFields.map((field) => (
-                        <label key={field.key} className="ms-field">
-                          <span className="ms-field__label">{field.label}</span>
+                </div>
+              ) : (
+                <form className="ms-form" onSubmit={handleSubmit}>
+                  <div className="ms-form__grid ms-form__grid--two">
+                    {editableFields.map((field) => (
+                      <label key={field.key} className="ms-field">
+                        <span className="ms-field__label">{field.label}</span>
 
-                          {field.type === 'boolean' ? (
-                            <label className="ms-checkbox">
-                              <input
-                                type="checkbox"
-                                checked={Boolean(formValues[field.key])}
-                                onChange={(event) =>
-                                  setFormValues((current) => ({
-                                    ...current,
-                                    [field.key]: event.target.checked,
-                                  }))
-                                }
-                              />
-                              <span>Activer</span>
-                            </label>
-                          ) : (
+                        {field.type === 'boolean' ? (
+                          <label className="ms-checkbox">
                             <input
-                              className="ms-input"
-                              type={field.type === 'number' ? 'number' : 'text'}
-                              value={
-                                typeof formValues[field.key] === 'string'
-                                  ? (formValues[field.key] as string)
-                                  : ''
-                              }
+                              type="checkbox"
+                              checked={Boolean(formValues[field.key])}
                               onChange={(event) =>
                                 setFormValues((current) => ({
                                   ...current,
-                                  [field.key]: event.target.value,
+                                  [field.key]: event.target.checked,
                                 }))
                               }
                             />
-                          )}
-                        </label>
-                      ))}
-                    </div>
+                            <span>Activer</span>
+                          </label>
+                        ) : (
+                          <input
+                            className="ms-input"
+                            type={field.type === 'number' ? 'number' : 'text'}
+                            value={
+                              typeof formValues[field.key] === 'string'
+                                ? (formValues[field.key] as string)
+                                : ''
+                            }
+                            onChange={(event) =>
+                              setFormValues((current) => ({
+                                ...current,
+                                [field.key]: event.target.value,
+                              }))
+                            }
+                          />
+                        )}
+                      </label>
+                    ))}
+                  </div>
 
-                    <div className="ms-actions">
-                      <Button type="submit" disabled={saving}>
-                        {saving ? 'Enregistrement...' : 'Enregistrer'}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={handleResetForm}
-                        disabled={saving}
-                      >
-                        Réinitialiser
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="danger"
-                        disabled={resettingId === editingProfile.id}
-                        onClick={() => handleResetPassword(editingProfile)}
-                      >
-                        {resettingId === editingProfile.id
-                          ? 'Réinitialisation...'
-                          : 'Reset mot de passe'}
-                      </Button>
-                    </div>
-                  </form>
-                )}
-              </div>
+                  <div className="ms-actions">
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Enregistrement...' : 'Enregistrer'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleResetForm}
+                      disabled={saving}
+                    >
+                      Réinitialiser
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      disabled={resettingId === editingProfile.id}
+                      onClick={() => handleResetPassword(editingProfile)}
+                    >
+                      {resettingId === editingProfile.id
+                        ? 'Réinitialisation...'
+                        : 'Reset mot de passe'}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
-          ) : null}
-        </AppShell>
+          </div>
+        ) : null}
+      </AppShell>
     </>
   );
 }
