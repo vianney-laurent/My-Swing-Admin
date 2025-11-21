@@ -71,10 +71,10 @@ type HomeProps = {
 };
 
 const PERIODS = [
-  { value: '7d', label: '7 derniers jours' },
-  { value: '30d', label: '30 derniers jours' },
-  { value: 'month', label: 'Mois en cours' },
-  { value: 'last_month', label: 'Mois dernier' },
+  { value: '7d', label: '7j' },
+  { value: '30d', label: '30j' },
+  { value: 'month', label: 'Mois' },
+  { value: 'last_month', label: 'M-1' },
 ];
 
 const numberFormatter = new Intl.NumberFormat('fr-FR');
@@ -117,8 +117,7 @@ export default function Home({ messageStats, dashboardMetrics, selectedPeriod }:
   const router = useRouter();
   const generatedAt = new Date(messageStats.generatedAt);
 
-  const handlePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPeriod = event.target.value;
+  const handlePeriodChange = (newPeriod: string) => {
     router.push({
       pathname: router.pathname,
       query: { ...router.query, period: newPeriod },
@@ -186,22 +185,17 @@ export default function Home({ messageStats, dashboardMetrics, selectedPeriod }:
         title="Tableau de bord"
         description="Visualisez les indicateurs clés actualisés pour piloter My Swing."
         actions={
-          <div className="ms-toolbar__actions">
-            <div className="ms-select-wrapper">
-              <CalendarIcon className="ms-select-icon" />
-              <select
-                className="ms-select ms-select--sm"
-                value={selectedPeriod}
-                onChange={handlePeriodChange}
-                style={{ paddingLeft: '2.5rem' }}
+          <div className="ms-segmented-control">
+            {PERIODS.map((p) => (
+              <button
+                key={p.value}
+                onClick={() => handlePeriodChange(p.value)}
+                className={`ms-segmented-control__item ${selectedPeriod === p.value ? 'ms-segmented-control__item--active' : ''
+                  }`}
               >
-                {PERIODS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {p.label}
+              </button>
+            ))}
           </div>
         }
       >
