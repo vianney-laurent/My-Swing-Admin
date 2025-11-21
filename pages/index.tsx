@@ -4,6 +4,13 @@ import { requireAdminSession } from '../lib/auth';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { AnalyticsChart } from '../components/analytics/AnalyticsChart';
+import {
+  ArrowRightIcon,
+  ChartBarIcon,
+  UsersIcon,
+  VideoCameraIcon,
+} from '@heroicons/react/24/outline';
 
 type MessageStats = {
   total: number;
@@ -163,6 +170,43 @@ export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
                   </div>
                 </Card>
               ))}
+            </div>
+          </section>
+
+          {/* Analytics Section */}
+          <section className="ms-dashboard-section">
+            <h2 className="ms-section-title">Activité</h2>
+            <div className="ms-dashboard-grid ms-dashboard-grid--two">
+              <AnalyticsChart
+                title="Nouveaux Utilisateurs"
+                description="Évolution des inscriptions sur les 7 derniers jours"
+                data={[
+                  { name: 'Lun', value: 4 },
+                  { name: 'Mar', value: 7 },
+                  { name: 'Mer', value: 5 },
+                  { name: 'Jeu', value: 12 },
+                  { name: 'Ven', value: 9 },
+                  { name: 'Sam', value: 15 },
+                  { name: 'Dim', value: 11 },
+                ]}
+                type="area"
+                color="var(--ms-color-primary)"
+              />
+              <AnalyticsChart
+                title="Vidéos Analysées"
+                description="Nombre de vidéos traitées par jour"
+                data={[
+                  { name: 'Lun', value: 24 },
+                  { name: 'Mar', value: 18 },
+                  { name: 'Mer', value: 32 },
+                  { name: 'Jeu', value: 28 },
+                  { name: 'Ven', value: 45 },
+                  { name: 'Sam', value: 38 },
+                  { name: 'Dim', value: 52 },
+                ]}
+                type="bar"
+                color="var(--ms-color-secondary)"
+              />
             </div>
           </section>
 

@@ -1332,6 +1332,72 @@ textarea {
 }
 
 /* Dashboard Styles */
+.ms-dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ms-space-4);
+}
+
+/* Advanced User Management Styles */
+.ms-search-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ms-search-input__icon {
+  position: absolute;
+  left: 0.75rem;
+  width: 16px;
+  height: 16px;
+  color: var(--ms-color-text-muted);
+  pointer-events: none;
+}
+
+.ms-input--search {
+  padding-left: 2.25rem;
+  min-width: 240px;
+}
+
+.ms-select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border-radius: var(--ms-radius-md);
+  border: 1px solid var(--ms-color-border);
+  background-color: var(--ms-color-surface);
+  color: var(--ms-color-text);
+  font-size: var(--ms-font-sm);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+}
+
+.ms-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--ms-space-4);
+  border-top: 1px solid var(--ms-color-border);
+  margin-top: var(--ms-space-4);
+}
+
+.ms-pagination__info {
+  font-size: var(--ms-font-sm);
+  color: var(--ms-color-text-muted);
+}
+
+.ms-pagination__actions {
+  display: flex;
+  gap: var(--ms-space-2);
+}
+
+.ms-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .ms-dashboard-grid {
   display: flex;
   flex-direction: column;

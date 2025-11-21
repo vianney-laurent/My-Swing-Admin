@@ -6,6 +6,11 @@ import { supabaseAdmin } from '../../lib/supabase-admin';
 import { AppShell } from '../../components/layout/AppShell';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import {
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/outline';
 
 type UserProfile = Record<string, any> & { id: string };
 
@@ -191,6 +196,45 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
   );
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
+
+  // Advanced Management State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  const filteredProfiles = useMemo(() => {
+    return profiles.filter((profile) => {
+      // Search Logic
+      const searchLower = searchQuery.toLowerCase();
+      const name = getProfileName(profile).toLowerCase();
+      const email = getProfileEmail(profile).toLowerCase();
+      const matchesSearch =
+        name.includes(searchLower) ||
+        email.includes(searchLower) ||
+        profile.id.toLowerCase().includes(searchLower);
+
+      // Filter Logic
+      let matchesFilter = true;
+      if (filterStatus !== 'all') {
+        const isActive = profile.is_active === true; // Assuming is_active exists
+        matchesFilter = filterStatus === 'active' ? isActive : !isActive;
+      }
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [profiles, searchQuery, filterStatus]);
+
+  const totalPages = Math.ceil(filteredProfiles.length / ITEMS_PER_PAGE);
+  const paginatedProfiles = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProfiles.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredProfiles, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
 
   const editableFields = useMemo(
     () => (editingProfile ? buildEditableFields(editingProfile) : []),
@@ -430,13 +474,36 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
         <Card
           title="Profils Supabase"
           description="Liste des comptes présents dans la table profiles. Utilisez le bouton « Modifier » pour ouvrir une modale d’édition rapide ou réinitialisez un mot de passe en un clic."
+          actions={
+            <div className="ms-toolbar__actions">
+              <div className="ms-search-input">
+                <MagnifyingGlassIcon className="ms-search-input__icon" />
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="ms-input ms-input--search"
+                />
+              </div>
+              <select
+                className="ms-select"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Inactifs</option>
+              </select>
+            </div>
+          }
         >
-          {profiles.length === 0 ? (
+          {paginatedProfiles.length === 0 ? (
             <div className="ms-empty-state">
-              <p>Aucun utilisateur enregistré pour le moment.</p>
-              <p>
-                Vérifiez votre base Supabase ou créez un nouvel utilisateur pour le voir apparaître ici.
-              </p>
+              <p>Aucun utilisateur trouvé.</p>
+              {profiles.length > 0 && (
+                <p className="ms-text-muted">Essayez de modifier vos filtres de recherche.</p>
+              )}
             </div>
           ) : (
             <>
@@ -456,7 +523,7 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                     </tr>
                   </thead>
                   <tbody>
-                    {profiles.map((profile) => {
+                    {paginatedProfiles.map((profile) => {
                       const displayName = getProfileName(profile);
 
                       return (
@@ -489,7 +556,7 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                               >
                                 {resettingId === profile.id
                                   ? 'Réinitialisation...'
-                                  : 'Reset mot de passe'}
+                                  : 'Reset'}
                               </Button>
                             </div>
                           </td>
@@ -499,69 +566,96 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                   </tbody>
                 </table>
               </div>
-              <div className="ms-users-mobile-list" aria-live="polite">
-                {profiles.map((profile) => {
-                  const displayName = getProfileName(profile);
 
-                  return (
-                    <Card key={`${profile.id}-mobile`} className="ms-mobile-card-wrapper">
-                      <div className="ms-mobile-card">
-                        <div className="ms-mobile-card__row">
-                          <div>
-                            <div
-                              className="ms-mobile-card__value"
-                              style={{ marginBottom: '0.35rem' }}
-                            >
-                              {displayName}
-                            </div>
-                            <div className="ms-meta">{profile.id}</div>
-                          </div>
-                          <span className="ms-badge ms-badge--neutral">Profil</span>
-                        </div>
-
-                        <div className="ms-mobile-card__row">
-                          <div>
-                            <div className="ms-mobile-card__label">Email</div>
-                            <div className="ms-mobile-card__value">{getProfileEmail(profile)}</div>
-                          </div>
-                        </div>
-
-                        <div className="ms-mobile-card__row">
-                          <div>
-                            <div className="ms-mobile-card__label">Statut</div>
-                            <div className="ms-mobile-card__value">{getProfileStatus(profile)}</div>
-                          </div>
-                          <div>
-                            <div className="ms-mobile-card__label">Mis à jour</div>
-                            <div className="ms-mobile-card__value">
-                              {formatDate(profile.updated_at ?? profile.created_at)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="ms-mobile-card__actions">
-                          <Button size="sm" variant="secondary" onClick={() => handleOpenEdit(profile)}>
-                            Modifier
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            disabled={resettingId === profile.id}
-                            onClick={() => handleResetPassword(profile)}
-                          >
-                            {resettingId === profile.id
-                              ? 'Réinitialisation...'
-                              : 'Reset mot de passe'}
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="ms-pagination">
+                  <span className="ms-pagination__info">
+                    Page {currentPage} sur {totalPages}
+                  </span>
+                  <div className="ms-pagination__actions">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    >
+                      <ChevronLeftIcon className="ms-icon" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      <ChevronRightIcon className="ms-icon" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </Card>
+        <div className="ms-users-mobile-list" aria-live="polite">
+          {profiles.map((profile) => {
+            const displayName = getProfileName(profile);
+
+            return (
+              <Card key={`${profile.id}-mobile`} className="ms-mobile-card-wrapper">
+                <div className="ms-mobile-card">
+                  <div className="ms-mobile-card__row">
+                    <div>
+                      <div
+                        className="ms-mobile-card__value"
+                        style={{ marginBottom: '0.35rem' }}
+                      >
+                        {displayName}
+                      </div>
+                      <div className="ms-meta">{profile.id}</div>
+                    </div>
+                    <span className="ms-badge ms-badge--neutral">Profil</span>
+                  </div>
+
+                  <div className="ms-mobile-card__row">
+                    <div>
+                      <div className="ms-mobile-card__label">Email</div>
+                      <div className="ms-mobile-card__value">{getProfileEmail(profile)}</div>
+                    </div>
+                  </div>
+
+                  <div className="ms-mobile-card__row">
+                    <div>
+                      <div className="ms-mobile-card__label">Statut</div>
+                      <div className="ms-mobile-card__value">{getProfileStatus(profile)}</div>
+                    </div>
+                    <div>
+                      <div className="ms-mobile-card__label">Mis à jour</div>
+                      <div className="ms-mobile-card__value">
+                        {formatDate(profile.updated_at ?? profile.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="ms-mobile-card__actions">
+                    <Button size="sm" variant="secondary" onClick={() => handleOpenEdit(profile)}>
+                      Modifier
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      disabled={resettingId === profile.id}
+                      onClick={() => handleResetPassword(profile)}
+                    >
+                      {resettingId === profile.id
+                        ? 'Réinitialisation...'
+                        : 'Reset mot de passe'}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
         {editingProfile ? (
           <div
             className="ms-modal"
