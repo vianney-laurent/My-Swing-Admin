@@ -10,7 +10,22 @@ import {
   ChartBarIcon,
   UsersIcon,
   VideoCameraIcon,
+  CalendarIcon,
 } from '@heroicons/react/24/outline';
+import {
+  subDays,
+  format,
+  eachDayOfInterval,
+  isSameDay,
+  parseISO,
+  startOfDay,
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+} from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { useRouter } from 'next/router';
 
 type MessageStats = {
   total: number;
@@ -45,12 +60,22 @@ type DashboardMetrics = {
     marketing: RateMetricData;
     improvement: RateMetricData;
   };
+  userGrowthData: { name: string; value: number }[];
+  analysisActivityData: { name: string; value: number }[];
 };
 
 type HomeProps = {
   messageStats: MessageStats;
   dashboardMetrics: DashboardMetrics;
+  selectedPeriod: string;
 };
+
+const PERIODS = [
+  { value: '7d', label: '7 derniers jours' },
+  { value: '30d', label: '30 derniers jours' },
+  { value: 'month', label: 'Mois en cours' },
+  { value: 'last_month', label: 'Mois dernier' },
+];
 
 const numberFormatter = new Intl.NumberFormat('fr-FR');
 const percentFormatter = new Intl.NumberFormat('fr-FR', {
@@ -88,8 +113,17 @@ const formatTrend = (metric: MetricData, comparisonLabel: string) => {
 const startOfUtcDay = (date: Date) =>
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 
-export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
+export default function Home({ messageStats, dashboardMetrics, selectedPeriod }: HomeProps) {
+  const router = useRouter();
   const generatedAt = new Date(messageStats.generatedAt);
+
+  const handlePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPeriod = event.target.value;
+    router.push({
+      pathname: router.pathname,
+      query: { ...router.query, period: newPeriod },
+    });
+  };
   const metricsGeneratedAt = new Date(dashboardMetrics.generatedAt);
 
   const messageMetrics = [
@@ -103,22 +137,22 @@ export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
     {
       label: 'Utilisateurs totaux',
       value: numberFormatter.format(dashboardMetrics.totalUsers.current),
-      trend: formatTrend(dashboardMetrics.totalUsers, 'vs fin M-1'),
+      trend: formatTrend(dashboardMetrics.totalUsers, 'vs période préc.'),
     },
     {
-      label: 'Comptes créés (semaine en cours)',
+      label: 'Nouveaux comptes',
       value: numberFormatter.format(dashboardMetrics.weeklySignups.current),
-      trend: formatTrend(dashboardMetrics.weeklySignups, 'vs semaine précédente'),
+      trend: formatTrend(dashboardMetrics.weeklySignups, 'vs période préc.'),
     },
     {
-      label: 'Analyses effectuées (mois en cours)',
+      label: 'Analyses effectuées',
       value: numberFormatter.format(dashboardMetrics.analyses.current),
-      trend: formatTrend(dashboardMetrics.analyses, 'vs M-1'),
+      trend: formatTrend(dashboardMetrics.analyses, 'vs période préc.'),
     },
     {
-      label: 'Inscriptions waitlist (semaine en cours)',
+      label: 'Inscriptions waitlist',
       value: numberFormatter.format(dashboardMetrics.waitlist.current),
-      trend: formatTrend(dashboardMetrics.waitlist, 'vs semaine précédente'),
+      trend: formatTrend(dashboardMetrics.waitlist, 'vs période préc.'),
     },
   ];
 
@@ -151,6 +185,25 @@ export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
       <AppShell
         title="Tableau de bord"
         description="Visualisez les indicateurs clés actualisés pour piloter My Swing."
+        actions={
+          <div className="ms-toolbar__actions">
+            <div className="ms-select-wrapper">
+              <CalendarIcon className="ms-select-icon" />
+              <select
+                className="ms-select ms-select--sm"
+                value={selectedPeriod}
+                onChange={handlePeriodChange}
+                style={{ paddingLeft: '2.5rem' }}
+              >
+                {PERIODS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        }
       >
         <div className="ms-dashboard-grid">
           {/* Key Metrics Section */}
@@ -179,31 +232,15 @@ export default function Home({ messageStats, dashboardMetrics }: HomeProps) {
             <div className="ms-dashboard-grid ms-dashboard-grid--two">
               <AnalyticsChart
                 title="Nouveaux Utilisateurs"
-                description="Évolution des inscriptions sur les 7 derniers jours"
-                data={[
-                  { name: 'Lun', value: 4 },
-                  { name: 'Mar', value: 7 },
-                  { name: 'Mer', value: 5 },
-                  { name: 'Jeu', value: 12 },
-                  { name: 'Ven', value: 9 },
-                  { name: 'Sam', value: 15 },
-                  { name: 'Dim', value: 11 },
-                ]}
+                description="Évolution des inscriptions sur la période"
+                data={dashboardMetrics.userGrowthData}
                 type="area"
                 color="var(--ms-color-primary)"
               />
               <AnalyticsChart
                 title="Vidéos Analysées"
                 description="Nombre de vidéos traitées par jour"
-                data={[
-                  { name: 'Lun', value: 24 },
-                  { name: 'Mar', value: 18 },
-                  { name: 'Mer', value: 32 },
-                  { name: 'Jeu', value: 28 },
-                  { name: 'Ven', value: 45 },
-                  { name: 'Sam', value: 38 },
-                  { name: 'Dim', value: 52 },
-                ]}
+                data={dashboardMetrics.analysisActivityData}
                 type="bar"
                 color="var(--ms-color-secondary)"
               />
@@ -313,68 +350,80 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const now = new Date();
   const nowIso = now.toISOString();
 
-  const startOfCurrentMonth = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
-  );
-  const startOfPreviousMonth = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)
-  );
+  const period = typeof context.query.period === 'string' ? context.query.period : '7d';
 
-  const startOfTodayUtc = startOfUtcDay(now);
-  const currentWeekDay = startOfTodayUtc.getUTCDay();
-  const offsetToMonday = (currentWeekDay + 6) % 7;
-  const startOfCurrentWeek = new Date(startOfTodayUtc);
-  startOfCurrentWeek.setUTCDate(startOfCurrentWeek.getUTCDate() - offsetToMonday);
-  const startOfPreviousWeek = new Date(startOfCurrentWeek);
-  startOfPreviousWeek.setUTCDate(startOfPreviousWeek.getUTCDate() - 7);
+  let startDate: Date;
+  let endDate: Date = now;
+  let previousStartDate: Date;
+  let previousEndDate: Date;
 
-  const weekElapsedMs = Math.min(
-    Math.max(now.getTime() - startOfCurrentWeek.getTime(), 0),
-    7 * 24 * 60 * 60 * 1000
-  );
-  const endOfPreviousWeekComparable = new Date(
-    startOfPreviousWeek.getTime() + weekElapsedMs
-  );
+  // Determine date ranges based on period
+  switch (period) {
+    case '30d':
+      startDate = subDays(now, 29);
+      previousStartDate = subDays(startDate, 30);
+      previousEndDate = subDays(endDate, 30);
+      break;
+    case 'month':
+      startDate = startOfMonth(now);
+      endDate = now; // Up to now
+      previousStartDate = startOfMonth(subMonths(now, 1));
+      previousEndDate = endOfMonth(subMonths(now, 1));
+      break;
+    case 'last_month':
+      startDate = startOfMonth(subMonths(now, 1));
+      endDate = endOfMonth(subMonths(now, 1));
+      previousStartDate = startOfMonth(subMonths(now, 2));
+      previousEndDate = endOfMonth(subMonths(now, 2));
+      break;
+    case '7d':
+    default:
+      startDate = subDays(now, 6);
+      previousStartDate = subDays(startDate, 7);
+      previousEndDate = subDays(endDate, 7);
+      break;
+  }
+
+  const startOfPeriod = startOfDay(startDate);
+  const endOfPeriod = endOfDay(endDate);
+  const startOfPreviousPeriod = startOfDay(previousStartDate);
+  const endOfPreviousPeriod = endOfDay(previousEndDate);
 
   const [
     totalUsersResponse,
-    currentMonthUsersResponse,
-    currentWeekUsersResponse,
-    previousWeekUsersResponse,
-    currentMonthAnalysesResponse,
-    previousMonthAnalysesResponse,
+    periodUsersResponse,
+    previousPeriodUsersResponse,
+    periodAnalysesResponse,
+    previousPeriodAnalysesResponse,
     consentTotalResponse,
     consentMarketingResponse,
     consentImprovementResponse,
-    waitlistCurrentWeekResponse,
-    waitlistPreviousWeekResponse,
+    waitlistPeriodResponse,
+    waitlistPreviousPeriodResponse,
+    chartProfilesResponse,
+    chartAnalysesResponse,
   ] = await Promise.all([
     supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
     supabaseAdmin
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfCurrentMonth.toISOString())
-      .lt('created_at', nowIso),
+      .gte('created_at', startOfPeriod.toISOString())
+      .lt('created_at', endOfPeriod.toISOString()),
     supabaseAdmin
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfCurrentWeek.toISOString())
-      .lt('created_at', nowIso),
-    supabaseAdmin
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfPreviousWeek.toISOString())
-      .lt('created_at', endOfPreviousWeekComparable.toISOString()),
+      .gte('created_at', startOfPreviousPeriod.toISOString())
+      .lt('created_at', endOfPreviousPeriod.toISOString()),
     supabaseAdmin
       .from('analyses')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfCurrentMonth.toISOString())
-      .lt('created_at', nowIso),
+      .gte('created_at', startOfPeriod.toISOString())
+      .lt('created_at', endOfPeriod.toISOString()),
     supabaseAdmin
       .from('analyses')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfPreviousMonth.toISOString())
-      .lt('created_at', startOfCurrentMonth.toISOString()),
+      .gte('created_at', startOfPreviousPeriod.toISOString())
+      .lt('created_at', endOfPreviousPeriod.toISOString()),
     supabaseAdmin.from('consent').select('*', { count: 'exact', head: true }),
     supabaseAdmin
       .from('consent')
@@ -387,13 +436,23 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     supabaseAdmin
       .from('waitlist')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfCurrentWeek.toISOString())
-      .lt('created_at', nowIso),
+      .gte('created_at', startOfPeriod.toISOString())
+      .lt('created_at', endOfPeriod.toISOString()),
     supabaseAdmin
       .from('waitlist')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfPreviousWeek.toISOString())
-      .lt('created_at', endOfPreviousWeekComparable.toISOString()),
+      .gte('created_at', startOfPreviousPeriod.toISOString())
+      .lt('created_at', endOfPreviousPeriod.toISOString()),
+    supabaseAdmin
+      .from('profiles')
+      .select('created_at')
+      .gte('created_at', startOfPeriod.toISOString())
+      .lt('created_at', endOfPeriod.toISOString()),
+    supabaseAdmin
+      .from('analyses')
+      .select('created_at')
+      .gte('created_at', startOfPeriod.toISOString())
+      .lt('created_at', endOfPeriod.toISOString()),
   ]);
 
   const getCountOrZero = (
@@ -408,25 +467,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   };
 
   const totalUsersCount = getCountOrZero(totalUsersResponse, 'profiles (total)');
-  const currentMonthUsersCount = getCountOrZero(
-    currentMonthUsersResponse,
-    'profiles (mois en cours)'
+  const periodUsersCount = getCountOrZero(periodUsersResponse, 'profiles (période)');
+  const previousPeriodUsersCount = getCountOrZero(
+    previousPeriodUsersResponse,
+    'profiles (période précédente)'
   );
-  const currentWeekUsersCount = getCountOrZero(
-    currentWeekUsersResponse,
-    'profiles (semaine en cours)'
+  const periodAnalysesCount = getCountOrZero(
+    periodAnalysesResponse,
+    'analyses (période)'
   );
-  const previousWeekUsersCount = getCountOrZero(
-    previousWeekUsersResponse,
-    'profiles (semaine précédente comparable)'
-  );
-  const currentMonthAnalysesCount = getCountOrZero(
-    currentMonthAnalysesResponse,
-    'analyses (mois en cours)'
-  );
-  const previousMonthAnalysesCount = getCountOrZero(
-    previousMonthAnalysesResponse,
-    'analyses (mois précédent)'
+  const previousPeriodAnalysesCount = getCountOrZero(
+    previousPeriodAnalysesResponse,
+    'analyses (période précédente)'
   );
   const consentTotalCount = getCountOrZero(
     consentTotalResponse,
@@ -440,40 +492,38 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     consentImprovementResponse,
     'consent (improvement true)'
   );
-  const waitlistCurrentWeekCount = getCountOrZero(
-    waitlistCurrentWeekResponse,
-    'waitlist (semaine en cours)'
+  const waitlistPeriodCount = getCountOrZero(
+    waitlistPeriodResponse,
+    'waitlist (période)'
   );
-  const waitlistPreviousWeekCount = getCountOrZero(
-    waitlistPreviousWeekResponse,
-    'waitlist (semaine précédente comparable)'
+  const waitlistPreviousPeriodCount = getCountOrZero(
+    waitlistPreviousPeriodResponse,
+    'waitlist (période précédente)'
   );
 
-  const previousMonthUsersTotal = Math.max(
-    totalUsersCount - currentMonthUsersCount,
-    0
-  );
-  const totalUsersDelta = totalUsersCount - previousMonthUsersTotal;
+  const previousTotalUsers = Math.max(totalUsersCount - periodUsersCount, 0);
+  const totalUsersDelta = totalUsersCount - previousTotalUsers;
   const totalUsersDeltaPercent =
-    previousMonthUsersTotal > 0
-      ? (totalUsersDelta / previousMonthUsersTotal) * 100
+    previousTotalUsers > 0
+      ? (totalUsersDelta / previousTotalUsers) * 100
       : null;
 
-  const weeklyDelta = currentWeekUsersCount - previousWeekUsersCount;
-  const weeklyDeltaPercent =
-    previousWeekUsersCount > 0
-      ? (weeklyDelta / previousWeekUsersCount) * 100
+  const signupsDelta = periodUsersCount - previousPeriodUsersCount;
+  const signupsDeltaPercent =
+    previousPeriodUsersCount > 0
+      ? (signupsDelta / previousPeriodUsersCount) * 100
       : null;
 
-  const analysesDelta = currentMonthAnalysesCount - previousMonthAnalysesCount;
+  const analysesDelta = periodAnalysesCount - previousPeriodAnalysesCount;
   const analysesDeltaPercent =
-    previousMonthAnalysesCount > 0
-      ? (analysesDelta / previousMonthAnalysesCount) * 100
+    previousPeriodAnalysesCount > 0
+      ? (analysesDelta / previousPeriodAnalysesCount) * 100
       : null;
-  const waitlistDelta = waitlistCurrentWeekCount - waitlistPreviousWeekCount;
+
+  const waitlistDelta = waitlistPeriodCount - waitlistPreviousPeriodCount;
   const waitlistDeltaPercent =
-    waitlistPreviousWeekCount > 0
-      ? (waitlistDelta / waitlistPreviousWeekCount) * 100
+    waitlistPreviousPeriodCount > 0
+      ? (waitlistDelta / waitlistPreviousPeriodCount) * 100
       : null;
 
   const marketingRate =
@@ -485,25 +535,25 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     generatedAt: nowIso,
     totalUsers: {
       current: totalUsersCount,
-      previous: previousMonthUsersTotal,
+      previous: previousTotalUsers,
       delta: totalUsersDelta,
       deltaPercentage: totalUsersDeltaPercent,
     },
     weeklySignups: {
-      current: currentWeekUsersCount,
-      previous: previousWeekUsersCount,
-      delta: weeklyDelta,
-      deltaPercentage: weeklyDeltaPercent,
+      current: periodUsersCount,
+      previous: previousPeriodUsersCount,
+      delta: signupsDelta,
+      deltaPercentage: signupsDeltaPercent,
     },
     analyses: {
-      current: currentMonthAnalysesCount,
-      previous: previousMonthAnalysesCount,
+      current: periodAnalysesCount,
+      previous: previousPeriodAnalysesCount,
       delta: analysesDelta,
       deltaPercentage: analysesDeltaPercent,
     },
     waitlist: {
-      current: waitlistCurrentWeekCount,
-      previous: waitlistPreviousWeekCount,
+      current: waitlistPeriodCount,
+      previous: waitlistPreviousPeriodCount,
       delta: waitlistDelta,
       deltaPercentage: waitlistDeltaPercent,
     },
@@ -519,6 +569,28 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         rate: improvementRate,
       },
     },
+    userGrowthData: eachDayOfInterval({ start: startDate, end: endDate }).map(
+      (day) => {
+        const count = (chartProfilesResponse.data || []).filter((item) =>
+          isSameDay(parseISO(item.created_at), day)
+        ).length;
+        return {
+          name: format(day, 'EEE dd', { locale: fr }),
+          value: count,
+        };
+      }
+    ),
+    analysisActivityData: eachDayOfInterval({ start: startDate, end: endDate }).map(
+      (day) => {
+        const count = (chartAnalysesResponse.data || []).filter((item) =>
+          isSameDay(parseISO(item.created_at), day)
+        ).length;
+        return {
+          name: format(day, 'EEE dd', { locale: fr }),
+          value: count,
+        };
+      }
+    ),
   };
 
   const { data, error } = await supabaseAdmin
@@ -571,6 +643,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       initialSession: session,
       messageStats: stats,
       dashboardMetrics,
+      selectedPeriod: period,
     },
   };
 };

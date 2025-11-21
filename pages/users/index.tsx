@@ -199,7 +199,6 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
 
   // Advanced Management State
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -214,16 +213,9 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
         email.includes(searchLower) ||
         profile.id.toLowerCase().includes(searchLower);
 
-      // Filter Logic
-      let matchesFilter = true;
-      if (filterStatus !== 'all') {
-        const isActive = profile.is_active === true; // Assuming is_active exists
-        matchesFilter = filterStatus === 'active' ? isActive : !isActive;
-      }
-
-      return matchesSearch && matchesFilter;
+      return matchesSearch;
     });
-  }, [profiles, searchQuery, filterStatus]);
+  }, [profiles, searchQuery]);
 
   const totalPages = Math.ceil(filteredProfiles.length / ITEMS_PER_PAGE);
   const paginatedProfiles = useMemo(() => {
@@ -234,7 +226,7 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterStatus]);
+  }, [searchQuery]);
 
   const editableFields = useMemo(
     () => (editingProfile ? buildEditableFields(editingProfile) : []),
@@ -456,7 +448,6 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
 
       <AppShell
         title="Gestion des utilisateurs"
-        description="Supervisez la table `profiles`, mettez à jour les informations clés et gérez les accès en un clin d’œil."
         breadcrumbs={[
           { label: 'Accueil', href: '/' },
           { label: 'Gestion utilisateurs' },
@@ -486,15 +477,6 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
                   className="ms-input ms-input--search"
                 />
               </div>
-              <select
-                className="ms-select"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
-              >
-                <option value="all">Tous les statuts</option>
-                <option value="active">Actifs</option>
-                <option value="inactive">Inactifs</option>
-              </select>
             </div>
           }
         >
@@ -779,7 +761,7 @@ export default function UsersPage({ initialProfiles, initialError }: UsersPagePr
             </div>
           </div>
         ) : null}
-      </AppShell>
+      </AppShell >
     </>
   );
 }
