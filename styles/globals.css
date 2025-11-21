@@ -86,38 +86,37 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ms-color-background: #0f172a;
-    /* Slate 900 */
-    --ms-color-surface: #1e293b;
-    /* Slate 800 */
-    --ms-color-surface-subtle: #334155;
-    /* Slate 700 */
-    --ms-color-surface-hover: #334155;
+/* Manual Dark Mode & System Preference */
+:root.dark {
+  --ms-color-background: #0f172a;
+  /* Slate 900 */
+  --ms-color-surface: #1e293b;
+  /* Slate 800 */
+  --ms-color-surface-subtle: #334155;
+  /* Slate 700 */
+  --ms-color-surface-hover: #334155;
 
-    --ms-color-border: #334155;
-    --ms-color-border-strong: #475569;
+  --ms-color-border: #334155;
+  --ms-color-border-strong: #475569;
 
-    --ms-color-text: #f8fafc;
-    /* Slate 50 */
-    --ms-color-text-muted: #94a3b8;
-    /* Slate 400 */
-    --ms-color-text-subtle: #64748b;
-    /* Slate 500 */
+  --ms-color-text: #f8fafc;
+  /* Slate 50 */
+  --ms-color-text-muted: #94a3b8;
+  /* Slate 400 */
+  --ms-color-text-subtle: #64748b;
+  /* Slate 500 */
 
-    --ms-color-primary-subtle: rgba(79, 70, 229, 0.2);
-    --ms-color-success-subtle: rgba(16, 185, 129, 0.2);
-    --ms-color-warning-subtle: rgba(245, 158, 11, 0.2);
-    --ms-color-danger-subtle: rgba(239, 68, 68, 0.2);
-    --ms-color-info-subtle: rgba(59, 130, 246, 0.2);
+  --ms-color-primary-subtle: rgba(79, 70, 229, 0.2);
+  --ms-color-success-subtle: rgba(16, 185, 129, 0.2);
+  --ms-color-warning-subtle: rgba(245, 158, 11, 0.2);
+  --ms-color-danger-subtle: rgba(239, 68, 68, 0.2);
+  --ms-color-info-subtle: rgba(59, 130, 246, 0.2);
 
-    --ms-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --ms-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-    --ms-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --ms-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --ms-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --ms-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
 
-    color-scheme: dark;
-  }
+  color-scheme: dark;
 }
 
 html,
@@ -508,7 +507,8 @@ textarea {
 .ms-user-menu__dropdown {
   position: absolute;
   right: 0;
-  top: calc(100% + var(--ms-space-2));
+  bottom: calc(100% + var(--ms-space-2));
+  top: auto;
   min-width: 220px;
   background-color: var(--ms-color-surface);
   border: 1px solid var(--ms-color-border);
@@ -572,6 +572,47 @@ textarea {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+}
+
+.ms-user-menu__theme {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--ms-space-2) 0;
+  border-top: 1px solid var(--ms-color-border);
+  border-bottom: 1px solid var(--ms-color-border);
+}
+
+.ms-theme-toggle {
+  display: flex;
+  background-color: var(--ms-color-surface-subtle);
+  padding: 0.25rem;
+  border-radius: var(--ms-radius-md);
+  gap: 0.25rem;
+}
+
+.ms-theme-toggle__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+  color: var(--ms-color-text-muted);
+  border-radius: var(--ms-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ms-theme-toggle__btn:hover {
+  color: var(--ms-color-text);
+}
+
+.ms-theme-toggle__btn.is-active {
+  background-color: var(--ms-color-surface);
+  color: var(--ms-color-primary);
+  box-shadow: var(--ms-shadow-sm);
 }
 
 @media (max-width: 640px) {
