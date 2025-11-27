@@ -62,6 +62,7 @@ type DashboardMetrics = {
   };
   userGrowthData: { name: string; value: number }[];
   analysisActivityData: { name: string; value: number }[];
+  waitlistGrowthData: { name: string; value: number }[];
 };
 
 type HomeProps = {
@@ -239,6 +240,15 @@ export default function Home({ messageStats, dashboardMetrics, selectedPeriod }:
                 color="var(--ms-color-secondary)"
               />
             </div>
+            <div className="ms-dashboard-grid ms-dashboard-grid--two" style={{ marginTop: '1.5rem' }}>
+              <AnalyticsChart
+                title="Inscriptions Waitlist"
+                description="Évolution de la waitlist sur la période"
+                data={dashboardMetrics.waitlistGrowthData}
+                type="area"
+                color="#F59E0B" // Amber-500
+              />
+            </div>
           </section>
 
           <div className="ms-dashboard-split">
@@ -396,6 +406,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     waitlistPreviousPeriodResponse,
     chartProfilesResponse,
     chartAnalysesResponse,
+    chartWaitlistResponse,
   ] = await Promise.all([
     supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
     supabaseAdmin
@@ -444,6 +455,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       .lt('created_at', endOfPeriod.toISOString()),
     supabaseAdmin
       .from('analyses')
+      .select('created_at')
+      .gte('created_at', startOfPeriod.toISOString())
+      .lt('created_at', endOfPeriod.toISOString()),
+    supabaseAdmin
+      .from('waitlist')
       .select('created_at')
       .gte('created_at', startOfPeriod.toISOString())
       .lt('created_at', endOfPeriod.toISOString()),
@@ -577,6 +593,17 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     analysisActivityData: eachDayOfInterval({ start: startDate, end: endDate }).map(
       (day) => {
         const count = (chartAnalysesResponse.data || []).filter((item) =>
+          isSameDay(parseISO(item.created_at), day)
+        ).length;
+        return {
+          name: format(day, 'EEE dd', { locale: fr }),
+          value: count,
+        };
+      }
+    ),
+    waitlistGrowthData: eachDayOfInterval({ start: startDate, end: endDate }).map(
+      (day) => {
+        const count = (chartWaitlistResponse.data || []).filter((item) =>
           isSameDay(parseISO(item.created_at), day)
         ).length;
         return {
